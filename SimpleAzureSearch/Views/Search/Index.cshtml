@@ -1,0 +1,35 @@
+﻿
+@{
+    ViewBag.Title = "Index";
+}
+<br />
+<label for="search-text">Search string:</label>
+<input type="text" id="search-text"/>  <button id="search-button">I'm Feeling Lucky!</button>
+<br /> <br />
+
+<div class="container">
+    <div class="col-xs-12 col-sm-6">
+        <div class="text-center">
+            <h4>Search in blob</h4>
+        </div>
+        <div id="blob-results"></div>
+    </div>
+    <div class="col-xs-12 col-sm-6 te">
+        <div class="text-center">
+            <h4>Search in table</h4>
+        </div>
+        <div id="table-results"></div>
+    </div>
+</div>
+@section scripts
+{
+    <script type="text/javascript">
+        $('#search-button').click(function () {
+            $('#blob-results').html("<img src='@(Url.Content("~/Images/loading.gif"))'>");
+            $('#table-results').html("<img src='@(Url.Content("~/Images/loading.gif"))'>");
+            $('#blob-results').load("@(Url.Action("SearchInBlob"))" + "?searchString=" + $('#search-text').val());
+            $('#table-results').load("@(Url.Action("SearchInTable"))" + "?searchString=" + $('#search-text').val());
+        });
+    </script>
+}
+
