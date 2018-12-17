@@ -6,6 +6,9 @@ using System.Web;
 using System.Web.Mvc;
 using Microsoft.Azure.Search;
 using Microsoft.Azure.Search.Models;
+using Microsoft.Azure.KeyVault;
+using System.Web.Configuration;
+using System.Threading.Tasks;
 
 namespace SimpleAzureSearch.Controllers
 {
@@ -19,7 +22,10 @@ namespace SimpleAzureSearch.Controllers
 
         public ActionResult SearchInTable(string searchString)
         {
-            var searchClient = CreateSearchIndexClient("docs-db-index");
+            Task<SearchIndexClient> callTask = Task.Run(() => CreateSearchIndexClientAsync("docs-db-index"));
+            callTask.Wait();
+            var searchClient = callTask.Result;
+
             SearchParameters parameters = new SearchParameters()
             {
                 Select = new[] { "Title" }
@@ -39,7 +45,10 @@ namespace SimpleAzureSearch.Controllers
 
         public ActionResult SearchInBlob(string searchString)
         {
-            var searchClient = CreateSearchIndexClient("docs-blob-index");
+            Task<SearchIndexClient> callTask = Task.Run(() => CreateSearchIndexClientAsync("docs-blob-index"));
+            callTask.Wait();
+            var searchClient = callTask.Result;
+
             SearchParameters parameters = new SearchParameters()
             {
                 Select = new[] { "metadata_storage_name" }
@@ -57,10 +66,13 @@ namespace SimpleAzureSearch.Controllers
             return Content("Data not found.");
         }
 
-        private SearchIndexClient CreateSearchIndexClient(string indexName)
+        private async Task<SearchIndexClient> CreateSearchIndexClientAsync(string indexName)
         {
             string searchServiceName = ConfigurationManager.AppSettings["ServiceName"];
-            string queryApiKey = ConfigurationManager.AppSettings["SearchApiKey"];
+            //string queryApiKey = ConfigurationManager.AppSettings["SearchApiKey"];
+            var kv = new KeyVaultClient(new KeyVaultClient.AuthenticationCallback(SimpleAzureSearch.Utils.TokenObtainer.GetToken));
+            var queryApiKeySecret = await kv.GetSecretAsync(WebConfigurationManager.AppSettings["SecretUri"]);
+            string queryApiKey = queryApiKeySecret.Value;
 
             SearchIndexClient indexClient = new SearchIndexClient(searchServiceName, indexName, new SearchCredentials(queryApiKey));
             return indexClient;
